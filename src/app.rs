@@ -118,11 +118,11 @@ pub fn LensesApp() -> Element {
                             active: *selected.read() == Some(lens.id),
                             on_select: {
                                 let lens_id = lens.id;
-                                move |()| selected.set(Some(lens_id))
+                                move |_| selected.set(Some(lens_id))
                             },
                             on_delete: {
                                 let lens_id = lens.id;
-                                move |()| {
+                                move |_| {
                                     lenses.write().retain(|l| l.id != lens_id);
                                     if *selected.read() == Some(lens_id) {
                                         selected.set(None);
@@ -131,7 +131,7 @@ pub fn LensesApp() -> Element {
                             },
                             on_refresh: {
                                 let lens_clone = lens.clone();
-                                move |()| {
+                                move |_| {
                                     let mut lenses = lenses;
                                     let id = lens_clone.id;
                                     // Mark as loading

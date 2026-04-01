@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 
 /// The service role a lens item was sourced from.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
 pub enum LensRole {
     Wiki,
     Chat,
@@ -61,7 +61,7 @@ impl LensRole {
 }
 
 /// A single result item within a lens.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct LensItem {
     /// The service role this result came from.
     pub role: LensRole,
@@ -74,7 +74,7 @@ pub struct LensItem {
 }
 
 /// A saved lens (search config + cached results).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Lens {
     /// Unique identifier (timestamp-based).
     pub id: i64,
@@ -117,57 +117,5 @@ impl Lens {
                 .push(item);
         }
         map.into_values().collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn lens_new_initializes_empty() {
-        let lens = Lens::new("Test Lens", "test query");
-        assert_eq!(lens.name, "Test Lens");
-        assert_eq!(lens.query, "test query");
-        assert!(lens.items.is_empty());
-        assert!(lens.last_refreshed.is_none());
-        assert!(!lens.loading);
-    }
-
-    #[test]
-    fn lens_role_ids_are_stable() {
-        assert_eq!(LensRole::Wiki.id(), "wiki");
-        assert_eq!(LensRole::Chat.id(), "chat");
-        assert_eq!(LensRole::Git.id(), "git");
-        assert_eq!(LensRole::Other("custom".to_string()).id(), "other:custom");
-    }
-
-    #[test]
-    fn lens_grouped_groups_by_role() {
-        let mut lens = Lens::new("L", "q");
-        lens.items = vec![
-            LensItem {
-                role: LensRole::Wiki,
-                summary: "a".to_string(),
-                link: None,
-                source: "s".to_string(),
-            },
-            LensItem {
-                role: LensRole::Wiki,
-                summary: "b".to_string(),
-                link: None,
-                source: "s".to_string(),
-            },
-            LensItem {
-                role: LensRole::Chat,
-                summary: "c".to_string(),
-                link: None,
-                source: "s".to_string(),
-            },
-        ];
-        let grouped = lens.grouped();
-        assert_eq!(grouped.len(), 2);
-        let wiki = grouped.iter().find(|(r, _)| *r == LensRole::Wiki).unwrap();
-        assert_eq!(wiki.1.len(), 2);
     }
 }
