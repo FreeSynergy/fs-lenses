@@ -63,14 +63,14 @@ impl FsView for LensDetailView {
     fn view(&self) -> Box<dyn FsWidget> {
         let search_btn = ButtonWidget {
             id: "lens-search-btn".into(),
-            label: "lenses-search-btn".into(), // FTL key resolved at render time
+            label: crate::keys::SEARCH_BTN.into(), // FTL key resolved at render time
             enabled: !self.lens.loading,
             action: "search".into(),
         };
 
         let query_input = TextInputWidget {
             id: "lens-query-input".into(),
-            placeholder: "lenses-search-placeholder".into(), // FTL key
+            placeholder: crate::keys::SEARCH_PLACEHOLDER.into(), // FTL key
             value: self.lens.query.clone(),
             enabled: !self.lens.loading,
         };
