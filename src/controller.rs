@@ -34,7 +34,7 @@ impl LensController {
     pub fn new() -> Self {
         Self {
             registry: Arc::new(InMemoryLensRegistry::new()),
-            engine: Arc::new(LensQueryEngine),
+            engine: Arc::new(LensQueryEngine::new()),
         }
     }
 
@@ -44,7 +44,7 @@ impl LensController {
     pub fn with_registry(registry: impl LensRegistry + 'static) -> Self {
         Self {
             registry: Arc::new(registry),
-            engine: Arc::new(LensQueryEngine),
+            engine: Arc::new(LensQueryEngine::new()),
         }
     }
 

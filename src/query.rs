@@ -1,52 +1,48 @@
-// query.rs — Lens query engine.
+// query.rs — LensQueryEngine: runs a search strategy for a given lens.
 //
-// Queries the bus for data matching a lens's search term.
-// Current implementation returns demo items; real bus integration
-// will be wired when fs-bus gRPC client is available.
+// Design Pattern: Strategy (composition) — LensQueryEngine holds a
+//                 `SearchStrategy` and delegates the actual search to it.
+//
+// Real bus integration will be added in G2 by swapping to BusSearchStrategy.
 
-use crate::model::{Lens, LensItem, LensRole};
+use std::sync::Arc;
+
+use crate::model::{Lens, LensItem};
+use crate::search::{DemoSearchStrategy, SearchStrategy};
 
 // ── LensQueryEngine ───────────────────────────────────────────────────────────
 
-pub struct LensQueryEngine;
+/// Executes searches for saved lenses using a pluggable [`SearchStrategy`].
+pub struct LensQueryEngine {
+    strategy: Arc<dyn SearchStrategy>,
+}
 
 impl LensQueryEngine {
-    /// Return demo items for a lens query.
-    ///
-    /// Real implementation will publish to the bus and collect responses.
-    pub fn refresh_lens(&self, lens: &Lens) -> Vec<LensItem> {
-        Self::demo_items(&lens.query)
+    /// Create an engine backed by the default demo strategy.
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            strategy: Arc::new(DemoSearchStrategy),
+        }
     }
 
-    /// Demonstration items shown before real bus routing is wired up.
-    fn demo_items(query: &str) -> Vec<LensItem> {
-        let q = query.to_string();
-        vec![
-            LensItem {
-                role: LensRole::Wiki,
-                summary: format!("Wiki: Search results for '{q}'"),
-                link: Some(format!("http://wiki.local/search?q={q}")),
-                source: "outline-wiki".into(),
-            },
-            LensItem {
-                role: LensRole::Chat,
-                summary: format!("Chat: 3 messages mentioning '{q}'"),
-                link: Some("http://chat.local/search".into()),
-                source: "matrix".into(),
-            },
-            LensItem {
-                role: LensRole::Git,
-                summary: format!("Git: 2 repositories matching '{q}'"),
-                link: Some("http://git.local/explore".into()),
-                source: "forgejo".into(),
-            },
-            LensItem {
-                role: LensRole::Tasks,
-                summary: format!("Tasks: 5 open tasks for '{q}'"),
-                link: Some("http://tasks.local/".into()),
-                source: "vikunja".into(),
-            },
-        ]
+    /// Create an engine with an explicit search strategy.
+    #[must_use]
+    pub fn with_strategy(strategy: impl SearchStrategy + 'static) -> Self {
+        Self {
+            strategy: Arc::new(strategy),
+        }
+    }
+
+    /// Run the lens's saved query through the search strategy.
+    pub fn refresh_lens(&self, lens: &Lens) -> Vec<LensItem> {
+        self.strategy.search(&lens.query)
+    }
+}
+
+impl Default for LensQueryEngine {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -59,7 +55,7 @@ mod tests {
 
     #[test]
     fn refresh_returns_demo_items() {
-        let engine = LensQueryEngine;
+        let engine = LensQueryEngine::new();
         let lens = Lens::new("test", "rust");
         let items = engine.refresh_lens(&lens);
         assert!(!items.is_empty());
@@ -67,7 +63,9 @@ mod tests {
 
     #[test]
     fn demo_items_include_all_roles() {
-        let items = LensQueryEngine::demo_items("alpha");
+        let engine = LensQueryEngine::new();
+        let lens = Lens::new("test", "alpha");
+        let items = engine.refresh_lens(&lens);
         let roles: Vec<_> = items.iter().map(|i| i.role.id()).collect();
         assert!(roles.contains(&"wiki".to_string()));
         assert!(roles.contains(&"chat".to_string()));

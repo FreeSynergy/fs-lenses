@@ -25,9 +25,11 @@ pub mod model;
 pub mod query;
 pub mod registry;
 pub mod rest;
+pub mod search;
 pub mod view;
 
 pub use controller::LensController;
 pub use model::Lens;
 pub use registry::{InMemoryLensRegistry, LensRegistry};
-pub use view::{LensDetailView, LensesView};
+pub use search::{BusSearchStrategy, DemoSearchStrategy, SearchStrategy};
+pub use view::{LensDetailView, LensesView, SearchView};

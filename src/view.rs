@@ -1,4 +1,4 @@
-// view.rs — FsView implementation for LensController.
+// view.rs — FsView implementations for fs-lenses.
 //
 // This is the ONLY file in fs-lenses that imports fs-render.
 // Domain types (Lens, LensController) do NOT import fs-render.
@@ -8,7 +8,7 @@ use fs_render::{
     widget::{ButtonWidget, FsWidget, ListWidget, TextInputWidget},
 };
 
-use crate::model::Lens;
+use crate::model::{Lens, LensItem};
 
 // ── LensesView ────────────────────────────────────────────────────────────────
 
@@ -94,6 +94,78 @@ impl FsView for LensDetailView {
     }
 }
 
+// ── SearchView ────────────────────────────────────────────────────────────────
+
+/// View for ad-hoc search results (not tied to a saved lens).
+///
+/// Displays the search term and a flat list of result items grouped
+/// by role label.
+pub struct SearchView {
+    /// The query that produced these results.
+    pub query: String,
+    /// Result items to display.
+    pub items: Vec<LensItem>,
+    /// Whether a search is currently in progress.
+    pub loading: bool,
+}
+
+impl SearchView {
+    #[must_use]
+    pub fn new(query: impl Into<String>, items: Vec<LensItem>) -> Self {
+        Self {
+            query: query.into(),
+            items,
+            loading: false,
+        }
+    }
+
+    #[must_use]
+    pub fn loading(query: impl Into<String>) -> Self {
+        Self {
+            query: query.into(),
+            items: vec![],
+            loading: true,
+        }
+    }
+}
+
+impl FsView for SearchView {
+    fn view(&self) -> Box<dyn FsWidget> {
+        let query_input = TextInputWidget {
+            id: "search-input".into(),
+            placeholder: crate::keys::SEARCH_PLACEHOLDER.into(),
+            value: self.query.clone(),
+            enabled: !self.loading,
+        };
+
+        let search_btn = ButtonWidget {
+            id: "search-btn".into(),
+            label: crate::keys::SEARCH_BTN.into(),
+            enabled: !self.loading,
+            action: "search".into(),
+        };
+
+        let result_items: Vec<String> = if self.loading {
+            vec!["…".into()]
+        } else {
+            self.items
+                .iter()
+                .map(|item| format!("[{}] {} — {}", item.role.label(), item.summary, item.source))
+                .collect()
+        };
+
+        Box::new(ListWidget {
+            id: "search-results".into(),
+            items: vec![query_input.value.clone(), search_btn.label.clone()]
+                .into_iter()
+                .chain(result_items)
+                .collect(),
+            selected_index: None,
+            enabled: true,
+        })
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -136,5 +208,34 @@ mod tests {
         let v = LensDetailView::new(lens);
         let w = v.view();
         assert!(w.widget_id().starts_with("lens-detail-"));
+    }
+
+    #[test]
+    fn search_view_widget_id() {
+        let v = SearchView::new("rust", vec![]);
+        let w = v.view();
+        assert_eq!(w.widget_id(), "search-results");
+    }
+
+    #[test]
+    fn search_view_loading_produces_widget() {
+        let v = SearchView::loading("test");
+        assert!(v.loading);
+        let w = v.view();
+        assert_eq!(w.widget_id(), "search-results");
+    }
+
+    #[test]
+    fn search_view_shows_items() {
+        use crate::model::{LensItem, LensRole};
+        let items = vec![LensItem {
+            role: LensRole::Wiki,
+            summary: "A wiki hit".into(),
+            link: None,
+            source: "wiki".into(),
+        }];
+        let v = SearchView::new("something", items);
+        let w = v.view();
+        assert_eq!(w.widget_id(), "search-results");
     }
 }
