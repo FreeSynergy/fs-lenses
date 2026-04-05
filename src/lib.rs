@@ -23,9 +23,11 @@ pub mod grpc;
 pub mod keys;
 pub mod model;
 pub mod query;
+pub mod registry;
 pub mod rest;
 pub mod view;
 
 pub use controller::LensController;
 pub use model::Lens;
+pub use registry::{InMemoryLensRegistry, LensRegistry};
 pub use view::{LensDetailView, LensesView};

@@ -98,8 +98,12 @@ fn run_cli(cmd: &Command, ctrl: &LensController) {
                 std::process::exit(1);
             }
         }
-        Command::Query { lens_id, query } => {
-            let results = ctrl.query(*lens_id, query);
+        Command::Query { lens_id, query: _ } => {
+            let results = ctrl
+                .refresh(*lens_id)
+                .into_iter()
+                .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
+                .collect::<Vec<_>>();
             if results.is_empty() {
                 println!("(no results)");
             } else {

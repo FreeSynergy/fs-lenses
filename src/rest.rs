@@ -100,8 +100,12 @@ async fn delete_lens(State(ctrl): State<LensController>, Path(id): Path<i64>) ->
 async fn query_lens(
     State(ctrl): State<LensController>,
     Path(id): Path<i64>,
-    Json(body): Json<QueryLensBody>,
+    Json(_body): Json<QueryLensBody>,
 ) -> Json<QueryLensResult> {
-    let results = ctrl.query(id, &body.query);
+    let results = ctrl
+        .refresh(id)
+        .into_iter()
+        .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
+        .collect();
     Json(QueryLensResult { results })
 }

@@ -71,7 +71,12 @@ impl LensService for GrpcLensApp {
         req: Request<QueryLensRequest>,
     ) -> Result<Response<QueryLensResponse>, Status> {
         let inner = req.into_inner();
-        let results = self.ctrl.query(inner.lens_id, &inner.query);
+        let results = self
+            .ctrl
+            .refresh(inner.lens_id)
+            .into_iter()
+            .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
+            .collect();
         Ok(Response::new(QueryLensResponse { results }))
     }
 
