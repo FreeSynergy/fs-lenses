@@ -70,9 +70,9 @@ impl LensController {
 
     /// Refresh a lens: run the query engine and update cached items.
     /// Returns the new items, or an empty vec if the lens was not found.
-    pub fn refresh(&self, lens_id: i64) -> Vec<LensItem> {
+    pub async fn refresh(&self, lens_id: i64) -> Vec<LensItem> {
         if let Some(lens) = self.registry.get(lens_id) {
-            let items = self.engine.refresh_lens(&lens);
+            let items = self.engine.refresh_lens(&lens).await;
             self.registry.update_items(lens_id, items.clone());
             items
         } else {
@@ -109,11 +109,11 @@ mod tests {
         assert!(ctrl.list().is_empty());
     }
 
-    #[test]
-    fn refresh_populates_items() {
+    #[tokio::test]
+    async fn refresh_populates_items() {
         let ctrl = LensController::new();
         let lens = ctrl.create("C".into(), "rust".into());
-        let items = ctrl.refresh(lens.id);
+        let items = ctrl.refresh(lens.id).await;
         assert!(!items.is_empty());
         // Items are also stored in the registry
         let updated = ctrl.get(lens.id).unwrap();
@@ -121,9 +121,9 @@ mod tests {
         assert!(updated.last_refreshed.is_some());
     }
 
-    #[test]
-    fn refresh_unknown_lens_returns_empty() {
+    #[tokio::test]
+    async fn refresh_unknown_lens_returns_empty() {
         let ctrl = LensController::new();
-        assert!(ctrl.refresh(999).is_empty());
+        assert!(ctrl.refresh(999).await.is_empty());
     }
 }

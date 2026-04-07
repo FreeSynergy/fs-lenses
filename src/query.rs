@@ -35,8 +35,8 @@ impl LensQueryEngine {
     }
 
     /// Run the lens's saved query through the search strategy.
-    pub fn refresh_lens(&self, lens: &Lens) -> Vec<LensItem> {
-        self.strategy.search(&lens.query)
+    pub async fn refresh_lens(&self, lens: &Lens) -> Vec<LensItem> {
+        self.strategy.search(&lens.query).await
     }
 }
 
@@ -53,19 +53,19 @@ mod tests {
     use super::*;
     use crate::model::Lens;
 
-    #[test]
-    fn refresh_returns_demo_items() {
+    #[tokio::test]
+    async fn refresh_returns_demo_items() {
         let engine = LensQueryEngine::new();
         let lens = Lens::new("test", "rust");
-        let items = engine.refresh_lens(&lens);
+        let items = engine.refresh_lens(&lens).await;
         assert!(!items.is_empty());
     }
 
-    #[test]
-    fn demo_items_include_all_roles() {
+    #[tokio::test]
+    async fn demo_items_include_all_roles() {
         let engine = LensQueryEngine::new();
         let lens = Lens::new("test", "alpha");
-        let items = engine.refresh_lens(&lens);
+        let items = engine.refresh_lens(&lens).await;
         let roles: Vec<_> = items.iter().map(|i| i.role.id()).collect();
         assert!(roles.contains(&"wiki".to_string()));
         assert!(roles.contains(&"chat".to_string()));

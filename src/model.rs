@@ -47,6 +47,19 @@ impl LensRole {
         }
     }
 
+    /// Construct a role from its stable string key (inverse of [`LensRole::id`]).
+    pub fn from_id(id: &str) -> Self {
+        match id {
+            "wiki" => Self::Wiki,
+            "chat" => Self::Chat,
+            "git" => Self::Git,
+            "map" => Self::Map,
+            "tasks" => Self::Tasks,
+            "iam" => Self::Iam,
+            other => Self::Other(other.to_owned()),
+        }
+    }
+
     pub fn label(&self) -> String {
         match self {
             Self::Wiki => fs_i18n::t("lenses.item.role_wiki").to_string(),

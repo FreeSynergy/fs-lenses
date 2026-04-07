@@ -140,7 +140,7 @@ pub fn LensesApp() -> Element {
                                     }
                                     let lens_for_task = lens_clone.clone();
                                     spawn(async move {
-                                        let items = LensQueryEngine.refresh_lens(&lens_for_task).await;
+                                        let items = LensQueryEngine::new().refresh_lens(&lens_for_task).await;
                                         if let Some(l) = lenses.write().iter_mut().find(|l| l.id == id) {
                                             l.items           = items;
                                             l.loading         = false;

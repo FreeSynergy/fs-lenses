@@ -74,6 +74,7 @@ impl LensService for GrpcLensApp {
         let results = self
             .ctrl
             .refresh(inner.lens_id)
+            .await
             .into_iter()
             .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
             .collect();

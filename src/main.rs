@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match args.command {
         Command::Daemon => run_daemon(ctrl).await?,
-        ref cmd => run_cli(cmd, &ctrl),
+        ref cmd => run_cli(cmd, &ctrl).await,
     }
     Ok(())
 }
@@ -78,7 +78,7 @@ async fn run_daemon(ctrl: LensController) -> Result<(), Box<dyn std::error::Erro
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
 
-fn run_cli(cmd: &Command, ctrl: &LensController) {
+async fn run_cli(cmd: &Command, ctrl: &LensController) {
     match cmd {
         Command::Daemon => unreachable!(),
         Command::List => {
@@ -101,6 +101,7 @@ fn run_cli(cmd: &Command, ctrl: &LensController) {
         Command::Query { lens_id, query: _ } => {
             let results = ctrl
                 .refresh(*lens_id)
+                .await
                 .into_iter()
                 .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
                 .collect::<Vec<_>>();

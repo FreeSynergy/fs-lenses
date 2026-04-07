@@ -104,6 +104,7 @@ async fn query_lens(
 ) -> Json<QueryLensResult> {
     let results = ctrl
         .refresh(id)
+        .await
         .into_iter()
         .map(|i| format!("[{}] {} ({})", i.role.id(), i.summary, i.source))
         .collect();
