@@ -43,7 +43,7 @@ pub fn LensesApp() -> Element {
                 class: "fs-lenses__header",
                 h2 {
                     style: "margin: 0; font-size: 15px; font-weight: 600; color: var(--fs-color-text-primary);",
-                    {fs_i18n::t("lenses.title")}
+                    {fs_i18n::t("lenses-title")}
                 }
                 button {
                     class: "fs-lenses__btn-primary",
@@ -52,7 +52,7 @@ pub fn LensesApp() -> Element {
                         form_query.set(String::new());
                         show_form.set(true);
                     },
-                    {fs_i18n::t("lenses.new_lens")}
+                    {fs_i18n::t("lenses-new-lens")}
                 }
             }
 
@@ -63,14 +63,14 @@ pub fn LensesApp() -> Element {
                     input {
                         class: "fs-lenses__input",
                         r#type: "text",
-                        placeholder: fs_i18n::t("lenses.form.name").to_string(),
+                        placeholder: fs_i18n::t("lenses-form-name").to_string(),
                         value: "{form_name}",
                         oninput: move |e| form_name.set(e.value()),
                     }
                     input {
                         class: "fs-lenses__input",
                         r#type: "text",
-                        placeholder: fs_i18n::t("lenses.search_hint").to_string(),
+                        placeholder: fs_i18n::t("lenses-search-hint").to_string(),
                         value: "{form_query}",
                         oninput: move |e| form_query.set(e.value()),
                     }
@@ -81,16 +81,16 @@ pub fn LensesApp() -> Element {
                                 let name  = form_name.read().trim().to_string();
                                 let query = form_query.read().trim().to_string();
                                 if !name.is_empty() && !query.is_empty() {
-                                    lenses.write().push(Lens::new(name, query));
+                                    lenses-write().push(Lens::new(name, query));
                                     show_form.set(false);
                                 }
                             },
-                            {fs_i18n::t("lenses.form.create")}
+                            {fs_i18n::t("lenses-form-create")}
                         }
                         button {
                             class: "fs-lenses__btn-ghost",
                             onclick: move |_| show_form.set(false),
-                            {fs_i18n::t("lenses.form.cancel")}
+                            {fs_i18n::t("lenses-form-cancel")}
                         }
                     }
                 }
@@ -104,14 +104,14 @@ pub fn LensesApp() -> Element {
                 div {
                     class: "fs-lenses__list",
 
-                    if lenses.read().is_empty() {
+                    if lenses-read().is_empty() {
                         p {
                             style: "color: var(--fs-color-text-muted); font-size: 13px; padding: 16px;",
-                            {fs_i18n::t("lenses.empty")}
+                            {fs_i18n::t("lenses-empty")}
                         }
                     }
 
-                    for lens in lenses.read().clone().iter() {
+                    for lens in lenses-read().clone().iter() {
                         LensListRow {
                             key: "{lens.id}",
                             lens: lens.clone(),
@@ -123,7 +123,7 @@ pub fn LensesApp() -> Element {
                             on_delete: {
                                 let lens_id = lens.id;
                                 move |_| {
-                                    lenses.write().retain(|l| l.id != lens_id);
+                                    lenses-write().retain(|l| l.id != lens_id);
                                     if *selected.read() == Some(lens_id) {
                                         selected.set(None);
                                     }
@@ -135,13 +135,13 @@ pub fn LensesApp() -> Element {
                                     let mut lenses = lenses;
                                     let id = lens_clone.id;
                                     // Mark as loading
-                                    if let Some(l) = lenses.write().iter_mut().find(|l| l.id == id) {
+                                    if let Some(l) = lenses-write().iter_mut().find(|l| l.id == id) {
                                         l.loading = true;
                                     }
                                     let lens_for_task = lens_clone.clone();
                                     spawn(async move {
                                         let items = LensQueryEngine::new().refresh_lens(&lens_for_task).await;
-                                        if let Some(l) = lenses.write().iter_mut().find(|l| l.id == id) {
+                                        if let Some(l) = lenses-write().iter_mut().find(|l| l.id == id) {
                                             l.items           = items;
                                             l.loading         = false;
                                             l.last_refreshed  = Some(chrono::Utc::now().to_rfc3339());
@@ -166,7 +166,7 @@ pub fn LensesApp() -> Element {
                             }
                         },
                         Some(id) => {
-                            if let Some(lens) = lenses.read().iter().find(|l| l.id == id).cloned() {
+                            if let Some(lens) = lenses-read().iter().find(|l| l.id == id).cloned() {
                                 rsx! {
                                     LensDetail {
                                         lens,
@@ -211,7 +211,7 @@ fn LensListRow(
                 if lens.loading {
                     span {
                         style: "font-size: 11px; color: var(--fs-color-primary, #06b6d4);",
-                        {fs_i18n::t("lenses.item.loading")}
+                        {fs_i18n::t("lenses-item-loading")}
                     }
                 }
             }
@@ -226,7 +226,7 @@ fn LensListRow(
                 }
                 button {
                     class: "fs-lenses__icon-btn fs-lenses__icon-btn--danger",
-                    title: fs_i18n::t("lenses.delete_lens").to_string(),
+                    title: fs_i18n::t("lenses-delete-lens").to_string(),
                     onclick: move |e: MouseEvent| { e.stop_propagation(); on_delete.call(()); },
                     "✕"
                 }
@@ -259,9 +259,9 @@ fn LensDetail(lens: Lens, on_open_url: EventHandler<String>) -> Element {
 
             if lens.items.is_empty() {
                 if lens.loading {
-                    p { style: "color: var(--fs-color-text-muted);", {fs_i18n::t("lenses.item.loading")} }
+                    p { style: "color: var(--fs-color-text-muted);", {fs_i18n::t("lenses-item-loading")} }
                 } else {
-                    p { style: "color: var(--fs-color-text-muted);", {fs_i18n::t("lenses.item.no_data")} }
+                    p { style: "color: var(--fs-color-text-muted);", {fs_i18n::t("lenses-item-no-data")} }
                 }
             }
 
@@ -292,7 +292,7 @@ fn LensDetail(lens: Lens, on_open_url: EventHandler<String>) -> Element {
                                             let url = link.clone();
                                             move |_| on_open_url.call(url.clone())
                                         },
-                                        "🔗 {fs_i18n::t(\"lenses.item.open_link\")}"
+                                        "🔗 {fs_i18n::t(\"lenses-item-open-link\")}"
                                     }
                                 }
                             }

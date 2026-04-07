@@ -62,12 +62,12 @@ impl LensRole {
 
     pub fn label(&self) -> String {
         match self {
-            Self::Wiki => fs_i18n::t("lenses.item.role_wiki").to_string(),
-            Self::Chat => fs_i18n::t("lenses.item.role_chat").to_string(),
-            Self::Git => fs_i18n::t("lenses.item.role_git").to_string(),
-            Self::Map => fs_i18n::t("lenses.item.role_map").to_string(),
-            Self::Tasks => fs_i18n::t("lenses.item.role_tasks").to_string(),
-            Self::Iam => fs_i18n::t("lenses.item.role_iam").to_string(),
+            Self::Wiki => fs_i18n::t("lenses-item-role-wiki").to_string(),
+            Self::Chat => fs_i18n::t("lenses-item-role-chat").to_string(),
+            Self::Git => fs_i18n::t("lenses-item-role-git").to_string(),
+            Self::Map => fs_i18n::t("lenses-item-role-map").to_string(),
+            Self::Tasks => fs_i18n::t("lenses-item-role-tasks").to_string(),
+            Self::Iam => fs_i18n::t("lenses-item-role-iam").to_string(),
             Self::Other(r) => r.clone(),
         }
     }
