@@ -31,5 +31,5 @@ pub mod view;
 pub use controller::LensController;
 pub use model::Lens;
 pub use registry::{InMemoryLensRegistry, LensRegistry};
-pub use search::{BusSearchStrategy, DemoSearchStrategy, SearchStrategy};
+pub use search::{BusSearchStrategy, DemoSearchStrategy, RegistrySearchStrategy, SearchStrategy};
 pub use view::{LensDetailView, LensesView, SearchView};

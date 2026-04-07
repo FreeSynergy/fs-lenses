@@ -19,7 +19,8 @@ path = "src/main.rs"
 fs-render = { path = "../fs-render" }
 fs-i18n   = { path = "../fs-i18n" }
 fs-error  = { path = "../fs-libs/fs-error" }
-fs-bus    = { path = "../fs-bus" }
+fs-bus      = { path = "../fs-bus" }
+fs-registry = { path = "../fs-registry" }
 serde      = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 chrono     = { version = "0.4", features = ["serde"] }

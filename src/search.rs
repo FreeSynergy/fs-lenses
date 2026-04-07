@@ -4,8 +4,9 @@
 //                 or any other caller.
 //
 //   SearchStrategy (trait)
-//     ├── DemoSearchStrategy   — deterministic demo items; used until bus is wired
-//     └── BusSearchStrategy    — publishes to fs-bus and collects responses
+//     ├── DemoSearchStrategy       — deterministic demo items
+//     ├── RegistrySearchStrategy   — local fs-registry capability lookup
+//     └── BusSearchStrategy        — publishes to fs-bus and collects responses
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -16,6 +17,7 @@ use fs_bus::event::Event;
 use fs_bus::message::BusMessage;
 use fs_bus::topic::TopicHandler;
 use fs_bus::{BusError, MessageBus};
+use fs_registry::service_registry::ServiceRegistry;
 use serde_json::json;
 use tokio::sync::{mpsc, Mutex};
 
@@ -69,6 +71,56 @@ impl SearchStrategy for DemoSearchStrategy {
                 source: "vikunja".into(),
             },
         ]
+    }
+}
+
+// ── RegistrySearchStrategy ────────────────────────────────────────────────────
+
+/// Local service-registry search strategy.
+///
+/// Queries the local [`ServiceRegistry`] for services matching the query:
+///
+/// 1. If the query looks like a known capability key (e.g. `"iam"`, `"mail"`),
+///    call `by_capability(query)` for an exact capability lookup.
+/// 2. Always also call `list()` and include entries whose `service_id` or
+///    `capability` contains the query string (case-insensitive).
+///
+/// Each matching [`ServiceEntry`] becomes a [`LensItem`] with role `Other(capability)`.
+pub struct RegistrySearchStrategy {
+    registry: Arc<dyn ServiceRegistry>,
+}
+
+impl RegistrySearchStrategy {
+    /// Create a strategy backed by any [`ServiceRegistry`] impl.
+    pub fn new(registry: Arc<dyn ServiceRegistry>) -> Self {
+        Self { registry }
+    }
+}
+
+#[async_trait]
+impl SearchStrategy for RegistrySearchStrategy {
+    async fn search(&self, query: &str) -> Vec<LensItem> {
+        let q = query.to_lowercase();
+
+        // Collect all entries once; filter in memory to avoid two round-trips
+        // where not necessary.
+        let Ok(all) = self.registry.list().await else {
+            return vec![];
+        };
+
+        all.into_iter()
+            .filter(|e| {
+                e.is_up()
+                    && (e.service_id.to_lowercase().contains(&q)
+                        || e.capability.to_lowercase().contains(&q))
+            })
+            .map(|e| LensItem {
+                role: LensRole::from_id(&e.capability),
+                summary: format!("{} — {} ({})", e.service_id, e.capability, e.endpoint),
+                link: Some(e.endpoint.clone()),
+                source: "fs-registry".into(),
+            })
+            .collect()
     }
 }
 
@@ -261,6 +313,49 @@ mod tests {
         let s = DemoSearchStrategy;
         let items = s.search("freeSynergy").await;
         assert!(items.iter().any(|i| i.summary.contains("freeSynergy")));
+    }
+
+    #[tokio::test]
+    async fn registry_strategy_returns_matching_services() {
+        use fs_registry::registry::Registry;
+
+        let reg = Arc::new(Registry::open(":memory:").await.unwrap());
+        reg.register(fs_registry::ServiceEntry::new(
+            "kanidm",
+            "iam",
+            "http://kanidm:8443",
+        ))
+        .await
+        .unwrap();
+        reg.register(fs_registry::ServiceEntry::new(
+            "forgejo",
+            "git",
+            "http://forgejo:3000",
+        ))
+        .await
+        .unwrap();
+
+        let strategy = RegistrySearchStrategy::new(reg);
+
+        // "iam" should match kanidm capability
+        let items = strategy.search("iam").await;
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].source, "fs-registry");
+        assert!(items[0].summary.contains("kanidm"));
+
+        // "git" should match forgejo
+        let items = strategy.search("git").await;
+        assert_eq!(items.len(), 1);
+        assert!(items[0].summary.contains("forgejo"));
+
+        // "forge" should match forgejo by service_id
+        let items = strategy.search("forge").await;
+        assert_eq!(items.len(), 1);
+        assert!(items[0].summary.contains("forgejo"));
+
+        // unknown query returns empty
+        let items = strategy.search("unknown-xyz").await;
+        assert!(items.is_empty());
     }
 
     #[tokio::test]
